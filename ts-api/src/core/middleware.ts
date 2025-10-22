@@ -1,10 +1,10 @@
-import type { Express, Request, Response, NextFunction } from "express";
-import pino from "pino-http";
 import compression from "compression";
+import cors from "cors";
+import type { Express, NextFunction, Request, Response } from "express";
+import helmet from "helmet";
+import pino from "pino-http";
 import logger from "@/core/logger";
 import session from "@/core/session";
-import helmet from "helmet";
-import cors from "cors";
 
 const genericErrorHandler = async (
 	err: Error,

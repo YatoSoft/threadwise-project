@@ -1,10 +1,10 @@
 import http from "node:http";
-import express, { Request, Response } from "express";
-import { bindMiddleware } from "@/core/middleware";
+import express, { type Request, type Response } from "express";
+import helmet from "helmet";
 import { Server } from "socket.io";
 import logger from "@/core/logger";
+import { bindMiddleware } from "@/core/middleware";
 import session from "@/core/session";
-import helmet from "helmet";
 
 const app = bindMiddleware(express());
 const server = http.createServer(app);
