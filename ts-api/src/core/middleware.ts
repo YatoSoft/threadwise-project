@@ -1,6 +1,7 @@
 import compression from "compression";
 import cors from "cors";
 import type { Express, NextFunction, Request, Response } from "express";
+import express from "express";
 import helmet from "helmet";
 import pino from "pino-http";
 import logger from "@/core/logger";
@@ -34,7 +35,15 @@ const pinoConfig = {
 
 export const bindMiddleware = (app: Express): Express => {
 	logger.debug("Binding middleware");
-	app.use(cors({ origin: "http://localhost:5173" }));
+
+	app.use(express.json());
+	app.use(
+		cors({
+			origin: "http://localhost:5173",
+			exposedHeaders: ["Mcp-Session-Id"],
+			allowedHeaders: ["Content-Type", "mcp-session-id"],
+		}),
+	);
 	app.use(session);
 	app.use(helmet());
 	app.use(pino(pinoConfig));

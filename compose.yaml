@@ -22,6 +22,30 @@ services:
 
         - action: rebuild
           path: ./ts-api/tsconfig.json
+  mcp-server:
+    build:
+      context: ./ts-api
+    env_file: .env
+    ports:
+      - 9001:9001
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: npm run start:mcp
+    develop:
+      watch:
+        - action: sync
+          path: ./ts-api/src
+          target: /usr/src/app/src
+
+        - action: rebuild
+          path: ./ts-api/package.json
+
+        - action: rebuild
+          path: ./ts-api/tsconfig.json
+
   db:
     image: postgres
     restart: always
