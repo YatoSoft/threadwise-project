@@ -1,5 +1,9 @@
+import type {
+	CallToolResult,
+	CallToolResultSchema,
+} from "@modelcontextprotocol/sdk/types";
 import { DateTime } from "luxon";
-import {} from "@/mcp/index";
+import { z } from "zod";
 
 const WEATHER_API_BASE_URL = "https://api.openweathermap.org/data/3.0/onecall";
 
@@ -23,7 +27,7 @@ export type WeatherOutput = {
 		morning?: number;
 		current?: number;
 	};
-	weather: {
+	weather?: {
 		description: string;
 	}[];
 }[];
@@ -132,6 +136,117 @@ interface WeatherAPIForecastResponse {
 	daily: WeatherAPIDaily[];
 }
 
+// -------------------- Zod -----------------------------------
+export const weatherAPIDailyAggResponseSchema = z.object({
+	lat: z.number(),
+	lon: z.number(),
+	tz: z.string(),
+	date: z.string(),
+	units: z.string(),
+	cloud_cover: z.object({
+		afternoon: z.number(),
+	}),
+	humidity: z.object({
+		afternoon: z.number(),
+	}),
+	precipitation: z.object({
+		total: z.number(),
+	}),
+	temperature: z.object({
+		min: z.number(),
+		max: z.number(),
+		afternoon: z.number(),
+		night: z.number(),
+		evening: z.number(),
+		morning: z.number(),
+	}),
+	pressure: z.object({
+		afternoon: z.number(),
+	}),
+	wind: z.object({
+		max: z.object({
+			speed: z.number(),
+			direction: z.number(),
+		}),
+	}),
+});
+
+export const weatherAPIDailySchema = z.object({
+	dt: z.number(),
+	sunrise: z.number(),
+	sunset: z.number(),
+	moonrise: z.number(),
+	moonset: z.number(),
+	moon_phase: z.number(),
+	summary: z.string(),
+	temp: z.object({
+		day: z.number(),
+		min: z.number(),
+		max: z.number(),
+		night: z.number(),
+		eve: z.number(),
+		morn: z.number(),
+	}),
+	feels_like: z.object({
+		day: z.number(),
+		night: z.number(),
+		eve: z.number(),
+		morn: z.number(),
+	}),
+	pressure: z.number(),
+	humidity: z.number(),
+	dew_point: z.number(),
+	wind_speed: z.number(),
+	wind_deg: z.number(),
+	wind_gust: z.number(),
+	weather: z.array(
+		z.object({
+			id: z.number(),
+			main: z.string(),
+			description: z.string(),
+			icon: z.string(),
+		}),
+	),
+	clouds: z.number(),
+	pop: z.number(),
+	rain: z.number(),
+	uvi: z.number(),
+});
+
+export const weatherAPIForecastResponseSchema = z.object({
+	lat: z.number(),
+	lon: z.number(),
+	timezone: z.string(),
+	timezone_offset: z.number(),
+	current: z.object({
+		dt: z.number(),
+		sunrise: z.number(),
+		sunset: z.number(),
+		temp: z.number(),
+		feels_like: z.number(),
+		pressure: z.number(),
+		humidity: z.number(),
+		dew_point: z.number(),
+		uvi: z.number(),
+		clouds: z.number(),
+		visibility: z.number(),
+		wind_speed: z.number(),
+		wind_deg: z.number(),
+		wind_gust: z.number(),
+		weather: z.array(
+			z.object({
+				id: z.number(),
+				main: z.string(),
+				description: z.string(),
+				icon: z.string(),
+			}),
+		),
+	}),
+	daily: z.array(weatherAPIDailySchema),
+});
+
+// -------------------------------------------------------
+
 const isWithin8DaysFromToday = (date: string): boolean => {
 	const now = DateTime.now();
 	const toDate = DateTime.fromISO(date);
@@ -197,7 +312,7 @@ export const fetchWeather = async ({
 	const requestConfig = getRequestConfig({ lat, lon, dateStart, dateEnd });
 
 	if (requestConfig.type === "daily_aggregate") {
-		const data: WeatherOutput = await fetchAggregateWeather({
+		const data: WeatherAPIDailyAggResponse[] = await fetchAggregateWeather({
 			lat,
 			lon,
 			dateStart,
@@ -205,16 +320,16 @@ export const fetchWeather = async ({
 		});
 
 		return {
-			content: [{ type: "text", text: JSON.stringify(data) }],
-			structuredContent: data,
-		};
+			content: [{ type: "text", text: JSON.stringify({ forecast: data }) }],
+			structuredContent: { forecast: data },
+		} as CallToolResult;
 	}
 
 	const response = await fetch(requestConfig.url);
 	const data: WeatherAPIForecastResponse = await response.json();
 
 	return {
-		content: [{ type: "text", text: JSON.stringify(data) }],
-		structuredContent: data,
-	};
+		content: [{ type: "text", text: JSON.stringify({ forecast: data }) }],
+		structuredContent: { forecast: data },
+	} as CallToolResult;
 };

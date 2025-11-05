@@ -1,3 +1,5 @@
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+
 interface LocationResponse {
 	place_id: string;
 	licence: string;
@@ -12,7 +14,7 @@ interface LocationResponse {
 	icon: string;
 }
 
-const getLatLong = async (location: string) => {
+export const getLatLong = async (location: string) => {
 	const response = await fetch(
 		`https://us1.locationiq.com/v1/search?key=${process.env.GEOCODE_API_KEY}&q=${location}&format=json`,
 	);
@@ -22,5 +24,5 @@ const getLatLong = async (location: string) => {
 	return {
 		content: [{ type: "text", text: JSON.stringify({ lat, lon }) }],
 		structuredContent: { lat, lon },
-	};
+	} as CallToolResult;
 };
